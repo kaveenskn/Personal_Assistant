@@ -11,7 +11,7 @@ const Chatbot: React.FC = () => {
 	const [messages, setMessages] = useState<Message[]>([
 		{
 			id: '1',
-			text: "Hello! I'm your AI Assistant. I can answer questions about my professional background, skills, and experience based on the uploaded CV. How can I help you?",
+			text: "Hello! I am the personal assistant of S. Kaveen. I can answer anything about Kaveen, his skills, and experience. How can I help you?",
 			sender: 'bot',
 			timestamp: new Date()
 		}

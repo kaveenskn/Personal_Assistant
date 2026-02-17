@@ -2,11 +2,11 @@ import Assistant from './components/Assistant';
 
 // Placeholder data - CUSTOMIZE THIS FOR YOUR OWN PROFILE
 const USER_PROFILE = {
-  profileImage: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=2544&auto=format&fit=crop', // Professional placeholder
-  name: 'Alex Morgan',
-  title: 'Senior Solutions Architect',
-  degree: 'MSc Artificial Intelligence',
-  bio: 'Passionate about leveraging AI to solve complex business problems. With over 8 years of experience in full-stack development and cloud architecture, I specialize in building scalable, intelligent systems that drive innovation.',
+  profileImage: '/profile.jpeg', // Place your image in public/profile.jpeg
+  name: 'S. Kaveen',
+  title: 'Full Stack Developer & AI Enthusiast',
+  degree: 'BSc (Hons) Software Engineering (Undergraduate)',
+  bio: 'Passionate Full Stack Developer with a strong focus on AI implementation. Also a Cybersecurity enthusiast on the path to mastering security principles.',
 };
 
 function App() {
