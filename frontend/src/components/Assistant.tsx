@@ -65,7 +65,7 @@ const Assistant: React.FC<AssistantProps> = ({ data }) => {
                         {data.degree}
                     </p>
 
-                    <p className="text-gold font-medium tracking-wide text-lg mb-6 uppercase text-sm">
+                    <p className="text-gold font-medium tracking-wide text-lg mb-6  text-sm">
                         {data.title}
                     </p>
 
