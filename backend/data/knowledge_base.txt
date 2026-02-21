@@ -1,0 +1,45 @@
+Name: Shanmugaraja Kaveen
+Role: Full-Stack Developer
+Email: kaveen@example.com
+Phone: +94 77 123 4567
+LinkedIn: https://linkedin.com/in/kaveen
+GitHub: https://github.com/kaveenskn
+
+Summary:
+A passionate full-stack developer with experience in React, React Native, Python, and JavaScript. Skilled in building web and mobile applications, integrating APIs, and designing scalable solutions.
+
+Education:
+- B.Sc. in Computer Science, Sabaragamuwa University of Sri Lanka (2022 - Present)
+- High School Diploma, Colombo Central College (2018 - 2021)
+
+Skills:
+- Programming: Python, JavaScript, TypeScript
+- Frontend: React, React Native, HTML, CSS, Tailwind
+- Backend: Node.js, Express, FastAPI
+- Databases: MongoDB, MySQL
+- Tools: Git, VS Code, Postman
+
+Projects:
+1. Internship & Job Matcher for Students:
+   - Web app that suggests internships/jobs based on skills and experience
+   - Features: AI-based resume feedback, company ranking, skill assessment
+
+2. Digital Album Maker:
+   - Modern solution for creating digital photo albums
+   - Users can upload photos and generate albums dynamically
+
+3. Gym AI Assistant:
+   - Mobile app to track workouts and suggest exercises using AI
+
+Experience:
+- Freelance Web Developer (2023 - Present)
+   - Built websites and web apps for local clients
+   - Worked on responsive design and interactive dashboards
+
+Languages:
+- English (Fluent)
+- Sinhala (Native)
+- Tamil (Fluent)
+
+Interests:
+- Cybersecurity, AI, Full-Stack Development, Traveling, Photography
