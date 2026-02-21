@@ -7,6 +7,10 @@ interface Message {
 	timestamp: Date;
 }
 
+type AskResponse = {
+	answer: string;
+};
+
 const Chatbot: React.FC = () => {
 	const [messages, setMessages] = useState<Message[]>([
 		{
@@ -20,6 +24,32 @@ const Chatbot: React.FC = () => {
 	const [isTyping, setIsTyping] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
+	const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '';
+
+	const askBackend = async (query: string): Promise<string> => {
+		const response = await fetch(`${API_BASE_URL}/api/ask`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ query })
+		});
+
+		if (!response.ok) {
+			let detail = 'Request failed';
+			try {
+				const err = await response.json();
+				detail = err?.detail || detail;
+			} catch {
+				// ignore
+			}
+			throw new Error(detail);
+		}
+
+		const data = (await response.json()) as AskResponse;
+		return data.answer;
+	};
+
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	};
@@ -28,13 +58,13 @@ const Chatbot: React.FC = () => {
 		scrollToBottom();
 	}, [messages]);
 
-	const handleSend = (e: React.FormEvent) => {
+	const handleSend = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!input.trim()) return;
 
 		const userMsg: Message = {
 			id: Date.now().toString(),
-			text: input,
+			text: input.trim(),
 			sender: 'user',
 			timestamp: new Date()
 		};
@@ -42,26 +72,27 @@ const Chatbot: React.FC = () => {
 		setInput('');
 		setIsTyping(true);
 
-		// Mock AI response
-		setTimeout(() => {
-			const botResponses = [
-				"Based on the CV, I have extensive experience in full-stack development, particularly with React and Node.js.",
-				"I have led multiple high-impact projects, increasing system efficiency by 40%.",
-				"My technical skillset includes JavaScript, Python, AWS, and Docker.",
-				"I am available for interviews. You can contact me via the email listed in the profile.",
-				"Great question! I specialize in building scalable web applications with a focus on user experience."
-			];
-			const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
-
+		try {
+			const answer = await askBackend(userMsg.text);
 			const botMsg: Message = {
 				id: (Date.now() + 1).toString(),
-				text: randomResponse,
+				text: answer,
 				sender: 'bot',
 				timestamp: new Date()
 			};
 			setMessages(prev => [...prev, botMsg]);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Unknown error';
+			const botMsg: Message = {
+				id: (Date.now() + 1).toString(),
+				text: `Error: ${message}`,
+				sender: 'bot',
+				timestamp: new Date()
+			};
+			setMessages(prev => [...prev, botMsg]);
+		} finally {
 			setIsTyping(false);
-		}, 1500);
+		}
 	};
 
 	return (
@@ -111,11 +142,12 @@ const Chatbot: React.FC = () => {
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
 						placeholder="Ask about skills, experience..."
-						className="flex-1 bg-black-rich border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-gold/50 transition-colors"
+						disabled={isTyping}
+						className="flex-1 bg-black-rich border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-gold/50 transition-colors disabled:opacity-60"
 					/>
 					<button
 						type="submit"
-						disabled={!input.trim()}
+						disabled={!input.trim() || isTyping}
 						className="bg-gold text-black-rich p-3 rounded-xl hover:bg-gold-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
