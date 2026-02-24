@@ -4,20 +4,20 @@ interface Message {
 	id: string;
 	text: string;
 	sender: 'user' | 'bot';
-	timestamp: Date;
 }
 
 const Chatbot: React.FC = () => {
+	const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 	const [messages, setMessages] = useState<Message[]>([
 		{
 			id: '1',
 			text: "Hello! I am the personal assistant of S. Kaveen. I can answer anything about Kaveen, his skills, and experience. How can I help you?",
-			sender: 'bot',
-			timestamp: new Date()
+			sender: 'bot'
 		}
 	]);
 	const [input, setInput] = useState('');
-	const [isTyping, setIsTyping] = useState(false);
+	const [isSending, setIsSending] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
 	const scrollToBottom = () => {
@@ -28,40 +28,51 @@ const Chatbot: React.FC = () => {
 		scrollToBottom();
 	}, [messages]);
 
-	const handleSend = (e: React.FormEvent) => {
+	const handleSend = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!input.trim()) return;
+		if (!input.trim() || isSending) return;
+
+		const userText = input;
 
 		const userMsg: Message = {
 			id: Date.now().toString(),
-			text: input,
-			sender: 'user',
-			timestamp: new Date()
+			text: userText,
+			sender: 'user'
 		};
 		setMessages(prev => [...prev, userMsg]);
 		setInput('');
-		setIsTyping(true);
+		setIsSending(true);
 
-		// Mock AI response
-		setTimeout(() => {
-			const botResponses = [
-				"Based on the CV, I have extensive experience in full-stack development, particularly with React and Node.js.",
-				"I have led multiple high-impact projects, increasing system efficiency by 40%.",
-				"My technical skillset includes JavaScript, Python, AWS, and Docker.",
-				"I am available for interviews. You can contact me via the email listed in the profile.",
-				"Great question! I specialize in building scalable web applications with a focus on user experience."
-			];
-			const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
+		try {
+			const res = await fetch(`${API_BASE_URL}/api/ask`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ query: userText }),
+			});
 
+			if (!res.ok) {
+				throw new Error(`Request failed (${res.status})`);
+			}
+
+			const data = (await res.json()) as { answer?: string };
 			const botMsg: Message = {
 				id: (Date.now() + 1).toString(),
-				text: randomResponse,
+				text: (data.answer || '').trim() || '(No answer returned)',
 				sender: 'bot',
-				timestamp: new Date()
 			};
 			setMessages(prev => [...prev, botMsg]);
-			setIsTyping(false);
-		}, 1500);
+		} catch {
+			const botMsg: Message = {
+				id: (Date.now() + 1).toString(),
+				text: 'Sorry — I could not reach the backend. Make sure the API is running on http://127.0.0.1:8000.',
+				sender: 'bot',
+			};
+			setMessages(prev => [...prev, botMsg]);
+		} finally {
+			setIsSending(false);
+		}
 	};
 
 	return (
@@ -91,15 +102,6 @@ const Chatbot: React.FC = () => {
 						</div>
 					</div>
 				))}
-				{isTyping && (
-					<div className="flex justify-start">
-						<div className="bg-white/5 px-4 py-3 rounded-2xl rounded-tl-none border border-white/10 flex items-center gap-1">
-							<span className="w-1.5 h-1.5 bg-gold/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-							<span className="w-1.5 h-1.5 bg-gold/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-							<span className="w-1.5 h-1.5 bg-gold/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-						</div>
-					</div>
-				)}
 				<div ref={messagesEndRef} />
 			</div>
 
@@ -115,7 +117,7 @@ const Chatbot: React.FC = () => {
 					/>
 					<button
 						type="submit"
-						disabled={!input.trim()}
+						disabled={!input.trim() || isSending}
 						className="bg-gold text-black-rich p-3 rounded-xl hover:bg-gold-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
