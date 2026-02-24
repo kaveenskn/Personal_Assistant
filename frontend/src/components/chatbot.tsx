@@ -49,7 +49,7 @@ const Chatbot: React.FC = () => {
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ query: userText }),
+				body: JSON.stringify({ question: userText, query: userText }),
 			});
 
 			if (!res.ok) {
