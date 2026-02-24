@@ -1,20 +1,26 @@
+# routes.py
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from rag import get_answer_async
+from rag import RagPipeline
 
 router = APIRouter()
+rag = RagPipeline()
 
-# Request and response schemas
-class QueryRequest(BaseModel):
-    query: str
+class AskRequest(BaseModel):
+    question: str | None = None
+    query: str | None = None
 
-class QueryResponse(BaseModel):
-    answer: str
+@router.post("/api/ask")
+def ask_question(request: AskRequest):
+    try:
+        user_question = (request.question or request.query or "").strip()
+        if not user_question:
+            raise HTTPException(status_code=400, detail="Field 'question' (or 'query') is required")
 
-@router.post("/ask", response_model=QueryResponse)
-async def ask(request: QueryRequest):
-    if not request.query.strip():
-        raise HTTPException(status_code=400, detail="Query is required")
-    
-    answer = await get_answer_async(request.query)
-    return {"answer": answer}
+        answer = rag.generate_answer(user_question)
+        return {"answer": answer}
+    except TimeoutError as e:
+        raise HTTPException(status_code=504, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e

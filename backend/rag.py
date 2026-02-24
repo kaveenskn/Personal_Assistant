@@ -1,42 +1,78 @@
-import asyncio
-import subprocess
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
+# rag.py
 
-KB_FILE = Path(__file__).parent / "data" / "knowledge_base.txt"
-with open(KB_FILE, "r", encoding="utf-8") as f:
-    knowledge_base = f.read()
+import os
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+import ollama
 
-executor = ThreadPoolExecutor(max_workers=4)  # adjust as needed
+class RagPipeline:
+    def __init__(self):
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.documents = self.load_documents()
+        self.index = self.create_vector_store()
+        self.ollama_client = ollama.Client(
+            host=os.getenv("OLLAMA_HOST"),
+            timeout=float(os.getenv("OLLAMA_TIMEOUT", "60")),
+        )
+        self.ollama_model = "qwen2.5:0.5b-instruct"
 
-def _get_answer(query: str) -> str:
-    prompt = f"""
-You are an assistant that knows the following information about the user:
-{knowledge_base}
+    def load_documents(self):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "data", "knowledge.txt")
 
-Answer the following question concisely:
+        with open(file_path, "r", encoding="utf-8") as f:
+            text = f.read()
+
+        # Split into chunks
+        chunks = text.split("\n\n")
+        return chunks
+
+    def create_vector_store(self):
+        embeddings = self.model.encode(self.documents)
+        embeddings = np.array(embeddings).astype("float32")
+
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatL2(dimension)
+        index.add(embeddings)
+
+        return index
+
+    def retrieve(self, query, top_k=2):
+        query_embedding = self.model.encode([query])
+        query_embedding = np.array(query_embedding).astype("float32")
+
+        distances, indices = self.index.search(query_embedding, top_k)
+        results = [self.documents[i] for i in indices[0]]
+
+        return "\n".join(results)
+
+    def generate_answer(self, query):
+        context = self.retrieve(query)
+
+        prompt = f"""
+You are a personal AI assistant that answers about Shanmugaraja Kaveen.
+Answer only using the context below.
+
+Context:
+{context}
+
+Question:
 {query}
 """
-    try:
-        result = subprocess.run(
-            ["ollama", "run", "llama3"],
-            input=prompt,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=True,
-            timeout=180,
-        )
-        return result.stdout.strip() or "(No response from model)"
-    except FileNotFoundError:
-        return "Error: Ollama CLI not found. Install Ollama and ensure `ollama` is on PATH."
-    except subprocess.TimeoutExpired:
-        return "Error: Model timed out while generating a response."
-    except subprocess.CalledProcessError as e:
-        return f"Error generating response: {(e.stderr or str(e)).strip()}"
 
-# Async wrapper for FastAPI
-async def get_answer_async(query: str) -> str:
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(executor, _get_answer, query)
+        try:
+            response = self.ollama_client.chat(
+                model=self.ollama_model,  # e.g. llama3; ensure: `ollama pull llama3`
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response["message"]["content"]
+        except Exception as e:
+            message = (
+                "Failed to get a response from Ollama. "
+                "Make sure Ollama is running (try `ollama serve`) and the model is available. "
+                f"Original error: {type(e).__name__}: {e}"
+            )
+            if "timeout" in str(e).lower():
+                raise TimeoutError(message) from e
+            raise RuntimeError(message) from e

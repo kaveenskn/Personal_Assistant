@@ -1,29 +1,34 @@
+# app.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import router
+import os
 
-app = FastAPI(title="Personal Assistant API")
+app = FastAPI()
 
-# CORS for Vite frontend
+# Allow frontend connection
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\\d+)?$",
+    allow_origins=["*"],  # change later for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API routes
-app.include_router(router, prefix="/api")
+app.include_router(router)
 
 @app.get("/")
 def root():
-    return {"message": "Welcome to Personal Assistant API"}
+    return {"message": "RAG Backend Running"}
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+
+    uvicorn.run(
+        "app:app",
+        host=os.getenv("HOST", "127.0.0.1"),
+        port=int(os.getenv("PORT", "8000")),
+        reload=os.getenv("RELOAD", "0") == "1",
+    )
